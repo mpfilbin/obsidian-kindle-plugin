@@ -14,29 +14,20 @@ export const parseSignoutLink = ($: Root): string => {
   throw new Error('Could not parse logout link');
 };
 
-type LogoutUrl = {
-  url: string;
-  isStillLoggedIn: boolean;
-};
-
-const scrapeLogoutUrl = async (): Promise<LogoutUrl> => {
+export const isLoggedIn = async (): Promise<boolean> => {
   const region = currentAmazonRegion();
   const kindleReaderUrl = region.kindleReaderUrl;
 
-  const { dom, didNavigateUrl } = await loadRemoteDom(kindleReaderUrl);
+  const { didNavigateUrl } = await loadRemoteDom(kindleReaderUrl);
+  return !didNavigateUrl.contains('signin');
+}
 
-  let logoutUrl: string = null;
-  const isStillLoggedIn = !didNavigateUrl.contains('signin');
+export const scrapeLogoutUrl = async (): Promise<string> => {
+  const region = currentAmazonRegion();
+  const kindleReaderUrl = region.kindleReaderUrl;
 
-  if (isStillLoggedIn) {
+  const { dom } = await loadRemoteDom(kindleReaderUrl);
+
     const signoutHrefUrl = parseSignoutLink(dom);
-    logoutUrl = `${kindleReaderUrl}${signoutHrefUrl}`;
-  }
-
-  return {
-    url: logoutUrl,
-    isStillLoggedIn,
-  };
+    return `${kindleReaderUrl}${signoutHrefUrl}`
 };
-
-export default scrapeLogoutUrl;

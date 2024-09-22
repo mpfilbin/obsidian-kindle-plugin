@@ -8,7 +8,7 @@ import AmazonLogoutModal from '~/components/amazonLogoutModal';
 import { ee } from '~/eventEmitter';
 import type FileManager from '~/fileManager';
 import type { AmazonAccountRegion } from '~/models';
-import { scrapeLogoutUrl } from '~/scraper';
+import { isLoggedIn, scrapeLogoutUrl } from '~/scraper';
 import { settingsStore } from '~/store';
 
 import TemplateEditorModal from './templateEditorModal';
@@ -80,15 +80,14 @@ export class SettingsTab extends PluginSettingTab {
             ee.emit('startLogout');
 
             try {
-              const signout = await scrapeLogoutUrl();
-
               // User is still logged in
-              if (signout.isStillLoggedIn) {
-                const modal = new AmazonLogoutModal(signout.url);
+              if (await isLoggedIn()) {
+                const url = await scrapeLogoutUrl();
+                const modal = new AmazonLogoutModal(url);
                 await modal.doLogout();
+                settingsStore.actions.logout();
               }
 
-              settingsStore.actions.logout();
             } catch (error) {
               console.error('Error when trying to logout', error);
               ee.emit('logoutFailure');
